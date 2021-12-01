@@ -2,7 +2,8 @@ import { Response } from "express";
 import RequestCustom from "../types/Request";
 import Payment from "../models/payment";
 import Loan from "../models/loan";
-
+import User from "../models/user";
+import Role from "../models/role";
 export const getPayments = async (req: RequestCustom, res: Response) => {
   const userId = req.userId;
   if (!userId) {
@@ -59,6 +60,20 @@ export const postPayment = async (req: RequestCustom, res: Response) => {
       message: "Se requiere token ",
     });
   }
+  const user: any = await User.findByPk(userId, {
+    include: [Role],
+  });
+
+  if (user.rol.nombre === "ADMINISTRADOR") {
+    return res.status(400).json({
+      message: "No tiene permisos para realizar esta acción",
+    });
+  }
+  if (!user) {
+    return res.status(400).json({
+      message: "No se encontro usuario",
+    });
+  }
   const { id_prestamo, monto, fecha, comentario } = req.body;
   if (!id_prestamo || !monto || !fecha || !comentario) {
     return res.status(400).json({
@@ -97,6 +112,20 @@ export const putPayment = async (req: RequestCustom, res: Response) => {
   if (!userId) {
     return res.status(400).json({
       message: "Se requiere token ",
+    });
+  }
+  const user: any = await User.findByPk(userId, {
+    include: [Role],
+  });
+
+  if (user.rol.nombre === "ADMINISTRADOR") {
+    return res.status(400).json({
+      message: "No tiene permisos para realizar esta acción",
+    });
+  }
+  if (!user) {
+    return res.status(400).json({
+      message: "No se encontro usuario",
     });
   }
   if (!id_pago) {

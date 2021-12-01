@@ -4,7 +4,7 @@ import bcryptjs from "bcryptjs";
 import generateJwt from "../helpers/generate-jwt";
 import User from "../models/user";
 import Person from "../models/person";
-
+import Rol from "../models/role";
 interface DataFilter {
   id_usuario: number;
   username: string;
@@ -25,24 +25,31 @@ export const postLogin = async (req: Request, res: Response) => {
       message: "Faltan datos",
     });
   }
-  const data = await User.findAll({ include: Person });
-  let { personas, ...datos }: any = data[0];
-  // tslint:disable-next-line: prefer-const
-  datos = datos.dataValues;
+  const data = await User.findOne({
+    where: { estado: true, username },
+    include: [Person, Rol],
+  });
 
-  if (username !== datos.username) {
+  if (!data) {
     return res.status(400).json({
-      message: "Usuario no encontrado",
+      message: "Usuario no existe",
     });
   }
-  /*
-  const salt: string = bcryptjs.genSaltSync(10);
-  console.log(salt);
-  const hash = bcryptjs.hashSync(clave, salt);
+  // console.log(data);
+  // res.json(data);
 
-  console.log("hashhh");
-  console.log(hash);
-*/
+  let { persona, rol, ...datos }: any = data;
+
+  datos = datos.dataValues;
+  console.log(datos);
+
+  //  const salt: string = bcryptjs.genSaltSync(10);
+  //  console.log(salt);
+  //  const hash = bcryptjs.hashSync(clave, salt);
+  //
+  //  console.log("hashhh");
+  //  console.log(hash);
+  //
   if (!bcryptjs.compareSync(clave, datos.clave)) {
     return res.status(400).json({
       message: "Clave incorrecta",
@@ -60,7 +67,8 @@ export const postLogin = async (req: Request, res: Response) => {
 
   dataFilter = {
     ...dataFilter,
-    ...personas[0].dataValues,
+    ...persona.dataValues,
+    rol: rol.dataValues.nombre,
   };
 
   const token = await generateJwt("" + dataFilter.id_usuario);

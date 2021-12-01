@@ -2,6 +2,7 @@ import { DataTypes, Model, Optional } from "sequelize";
 import db from "../db/connection";
 import Person from "./person";
 import User from "../types/ModelUser";
+import Rol from "./role";
 /*
 interface UserAttributes {
   id_usuario: number;
@@ -26,6 +27,10 @@ const User = db.define<UserInstance>(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    id_rol: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
     username: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -46,9 +51,14 @@ const User = db.define<UserInstance>(
   }
 );
 
-// User.belongsTo(Person, { foreignKey: "id_persona" });
-// Person.hasMany(User, { foreignKey: "id_persona" });
-User.hasMany(Person, { foreignKey: "id_persona" });
-Person.belongsTo(User, { foreignKey: "id_persona" });
+User.belongsTo(Person, { foreignKey: "id_persona" });
+Person.hasMany(User, { foreignKey: "id_persona" });
+// User.hasMany(Person, { foreignKey: "id_persona" });
+// Person.belongsTo(User, { foreignKey: "id_persona" });
+
+
+User.belongsTo(Rol, { foreignKey: "id_rol" });
+Rol.hasMany(User, { foreignKey: "id_rol" });
+
 
 export default User;

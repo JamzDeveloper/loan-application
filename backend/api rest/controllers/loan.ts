@@ -4,6 +4,8 @@ import RequestCustom from "../types/Request";
 import Person from "../models/person";
 import Loan from "../models/loan";
 import Payment from "../models/payment";
+import User from "../models/user";
+import Role from "../models/role";
 export const getLoans = async (req: RequestCustom, res: Response) => {
   const id_usuario: string = req.userId as string;
   if (!id_usuario) {
@@ -77,7 +79,8 @@ export const getLoan = async (req: RequestCustom, res: Response) => {
 };
 
 export const postLoan = async (req: RequestCustom, res: Response) => {
-  let id_usuario: string = req.userId as string;
+  // tslint:disable-next-line: variable-name
+  const id_usuario: string = req.userId as string;
 
   const {
     id_persona,
@@ -91,6 +94,21 @@ export const postLoan = async (req: RequestCustom, res: Response) => {
   if (!id_usuario) {
     return res.status(400).json({
       message: "Se requiere token",
+    });
+  }
+
+  const user: any = await User.findByPk(id_usuario, {
+    include: [Role],
+  });
+
+  if (user.rol.nombre === "ADMINISTRADOR") {
+    return res.status(400).json({
+      message: "No tiene permisos para realizar esta acción",
+    });
+  }
+  if (!user) {
+    return res.status(400).json({
+      message: "No se encontro usuario",
     });
   }
   if (
@@ -149,16 +167,31 @@ export const putLoan = async (req: RequestCustom, res: Response) => {
     empenio,
     estado_prestamo,
   } = req.body;
-  if (!id_prestamo) {
-    return res.status(400).json({
-      message: "Se requiere identificador de prestamo",
-    });
-  }
   if (!id_usuario) {
     return res.status(400).json({
       message: "Se requiere token",
     });
   }
+  const user: any = await User.findByPk(id_usuario, {
+    include: [Role],
+  });
+
+  if (user.rol.nombre === "ADMINISTRADOR") {
+    return res.status(400).json({
+      message: "No tiene permisos para realizar esta acción",
+    });
+  }
+  if (!user) {
+    return res.status(400).json({
+      message: "No se encontro usuario",
+    });
+  }
+  if (!id_prestamo) {
+    return res.status(400).json({
+      message: "Se requiere identificador de prestamo",
+    });
+  }
+
   if (
     !id_persona ||
     !monto ||
