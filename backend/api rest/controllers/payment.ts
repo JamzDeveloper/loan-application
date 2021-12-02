@@ -4,6 +4,7 @@ import Payment from "../models/payment";
 import Loan from "../models/loan";
 import User from "../models/user";
 import Role from "../models/role";
+import db from "../db/connection";
 export const getPayments = async (req: RequestCustom, res: Response) => {
   const userId = req.userId;
   if (!userId) {
@@ -74,6 +75,7 @@ export const postPayment = async (req: RequestCustom, res: Response) => {
       message: "No se encontro usuario",
     });
   }
+
   const { id_prestamo, monto, fecha, comentario } = req.body;
   if (!id_prestamo || !monto || !fecha || !comentario) {
     return res.status(400).json({
@@ -82,21 +84,51 @@ export const postPayment = async (req: RequestCustom, res: Response) => {
   }
   try {
     const loan = await Loan.findOne({ where: { id_prestamo, estado: true } });
+    /*const loan = await db.query(
+        `call procesar_pago(:idPrestamo,:dinero,:fecha,:comentario)`,
+        {
+          replacements: {
+            idPrestamo: id_prestamo,
+            dinero: monto,
+            fecha,
+            comentario,
+          },
+        }
+      );*/
     if (!loan) {
       return res.status(404).json({
         message: "No se encontro el prestamo",
       });
     }
-    const payment = await Payment.create({
+    /*const payment = await Payment.create({
       id_prestamo,
       monto,
       fecha,
       comentario,
       estado: true,
     });
-    payment.save();
+    */
+    const payment = await db.query(
+      `call procesar_pago(:idPrestamo,:dinero,:fecha,:comentario)`,
+      {
+        replacements: {
+          idPrestamo: id_prestamo,
+          dinero: monto,
+          fecha,
+          comentario,
+        },
+      }
+    );
+    const resp: any = payment[payment.length - 1];
+    if (resp.resp === 0 || resp.resp === -1) {
+      return res.status(400).json({
+        message: "No se pudo procesar el pago",
+      });
+    }
+
+    // payment.save();
     return res.json({
-      data: payment,
+      data: payment[payment.length - 1],
       message: "Pago creado",
     });
   } catch (err) {

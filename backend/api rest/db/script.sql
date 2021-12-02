@@ -96,3 +96,36 @@ select * from prestamo;
 select * from pago;
 
 
+#-----------------------------------------------
+delimiter $
+create procedure procesar_pago(in id_prestamo int,in monto float,in fecha Date,in comentario varchar(400))
+begin	
+declare dineroPagar float;
+declare aux float;
+declare ban bool;
+set dineroPagar=0.0;
+set aux = 0.0;
+	set ban =(select estado from prestamo P where P.id_prestamo =id_prestamo);
+    if(ban) then
+		if(monto>0) then 
+			set dineroPagar= (select (P.monto)*(porcentaje/100) from prestamo P where P.id_prestamo=id_prestamo);
+			set aux = dineroPagar - monto;
+		
+			insert into pago values(null,id_prestamo,monto,fecha,comentario,true);
+				if(aux!=0) then
+				update prestamo P 
+				set P.monto = P.monto+aux
+				where P.id_prestamo = id_prestamo;	
+				end if;
+        select *,1 as resp from pago;
+		else
+			select 0 as resp;
+		end if;
+     else 
+         select -1 as resp;
+	end if;
+end;
+$
+select * from prestamo;
+select * from pago;
+call procesar_pago(1,7000,'2021-11-30','proceso almacenado 12');
